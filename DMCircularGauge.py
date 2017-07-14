@@ -23,8 +23,11 @@ class DMCircularGauge(QWidget):
             width = height*2
         width_offset = (self.width()-width)/2.0
 
-        # First main draw gauge arc
+        # Initialize QPainter properties
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # First main draw gauge arc
         pen = QPen(painter.pen())
         pen.setWidth(3)
         pen.setColor(Qt.black)
