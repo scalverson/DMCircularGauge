@@ -7,16 +7,20 @@ from numpy import linspace
 
 
 class DMCircularGauge(QWidget):
+    _value = 0.0
     percentage = 0.0
 
-    def __init__(self, channel='', lim_low_channel=0.0, lim_hi_channel=100.0):
+    def __init__(self, channel='', lim_low_channel=0.0, lim_hi_channel=90.0):
         super(DMCircularGauge, self).__init__()
 
         self._channel = channel
         self._limits = [lim_low_channel, lim_hi_channel]
-        self.channel_value = 49
+        self.channel_value = 49.0
 
-        self.resize(400, 220)
+        width_ref = 400
+        height_ref = 220
+        self.resize(width_ref, height_ref)
+        self.aspect_ratio = width_ref / height_ref
 
         self.dial_v_offset = self.height() * 0.1
         if self.height() >= self.width() / 2 + self.dial_v_offset:
@@ -38,7 +42,7 @@ class DMCircularGauge(QWidget):
         self.dial_bg.setColorAt(0.98, QColor(50, 50, 50, 255))
         self.dial_bg.setColorAt(1, Qt.black)
 
-        needle_base_width = 28
+        needle_base_width = 24
         self.needle_left = QPolygonF([QPoint(0, 0),
                                       QPoint(0, -needle_base_width/2.0),
                                       QPoint(self.dial_height*0.9, 0.0)])
@@ -46,31 +50,25 @@ class DMCircularGauge(QWidget):
                                       QPoint(0, needle_base_width / 2.0),
                                       QPoint(self.dial_height * 0.9, 0.0)])
 
-        pin_diameter = 32
+        pin_diameter = 28
         self.pin_rect = QRectF(-pin_diameter / 2.0, -pin_diameter / 2.0, pin_diameter, pin_diameter)
         self.pin_bg = QRadialGradient(QPointF(0.0, -pin_diameter / 5.0), pin_diameter * 0.75)
         self.pin_bg.setColorAt(0, Qt.lightGray)
         self.pin_bg.setColorAt(1, Qt.black)
-
-    def _dial_rect(self):
-        return QRectF(0.0,
-                      self.height() - (self.dial_height + self.dial_v_offset),
-                      self.dial_width,
-                      self.dial_height * 2)
 
     def paintEvent(self, event):
         # Initialize QPainter properties
         painter = QPainter()
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        if self.height() <= self.width() / 2.1:
+        if self.height() <= self.width() / self.aspect_ratio:
             v_scale = self.height()
-            h_scale = v_scale * 2.1
+            h_scale = v_scale * self.aspect_ratio
         else:
             h_scale = self.width()
-            v_scale = h_scale / 2.1
+            v_scale = h_scale / self.aspect_ratio
+        painter.scale(h_scale / 400.0, v_scale / 220.0)  # Scale all objects proportionate to window size
         painter.save()
-        painter.scale(h_scale/400.0, v_scale/220.0)
 
         # First main draw gauge background
         pen = QPen(painter.pen())
@@ -81,9 +79,23 @@ class DMCircularGauge(QWidget):
         painter.drawPath(self.dial)
         painter.restore()
 
+        # Display actual value
+        painter.save()
+        painter.setClipPath(self.dial)  # Don't allow label text to extend outside of main shape
+        font = QFont()
+        font.setPixelSize(min(max(self.dial_width / 2, 20), 50))
+        painter.setFont(font)
+        pen.setColor(Qt.green)
+        painter.setPen(pen)
+        font_metric = QFontMetrics(font)
+        painter.translate(self.dial_width / 2, self.dial_height / 2)
+        label = QString().setNum(self.channel_value, 'f', 2)
+        painter.drawText(QPointF(0.0 - font_metric.width(label) / 2.0, font_metric.height() / 2.0),
+                         label)
+        painter.restore()
+
         # Next add division markers
         painter.save()
-        painter.scale(h_scale / 400.0, v_scale / 220.0)
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         pen.setColor(Qt.cyan)
         painter.setPen(pen)
@@ -97,11 +109,13 @@ class DMCircularGauge(QWidget):
 
         # Layout division text labels
         painter.save()
-        painter.scale(h_scale / 400.0, v_scale / 220.0)
+        painter.setClipPath(self.dial)  # Don't allow label text to extend outside of main shape
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         pen.setColor(Qt.cyan)
         painter.setPen(pen)
-        font = QFont(painter.font())
+        font = QFont()
+        font.setPixelSize(min(max(self.dial_width / 10, 10), 20))
+        painter.setFont(font)
         font_metric = QFontMetrics(font)
         labels = linspace(self.lim_low, self.lim_hi, 7)
         painter.rotate(-90)
@@ -113,7 +127,6 @@ class DMCircularGauge(QWidget):
 
         # Draw needle at appropriate angle for data
         painter.save()
-        painter.scale(h_scale / 400.0, v_scale / 220.0)
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         painter.rotate(-180 * (1.0 - self.percentage))
 
@@ -140,19 +153,16 @@ class DMCircularGauge(QWidget):
 
         # Draw needle axel pin
         painter.save()
-        pen = QPen(painter.pen())
         pen.setWidth(1)
         pen.setColor(Qt.black)
         painter.setPen(pen)
         painter.setBrush(self.pin_bg)
-        painter.scale(h_scale / 400.0, v_scale / 220.0)
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         painter.drawEllipse(self.pin_rect)
         painter.restore()
 
         # Draw glass reflection and shadow effects
         painter.save()
-        painter.scale(h_scale / 400.0, v_scale / 220.0)
         painter.setClipPath(self.dial)
         painter.translate(self.dial_width / 2.0, self.dial_height / 2.0)
         painter.setPen(Qt.NoPen)
