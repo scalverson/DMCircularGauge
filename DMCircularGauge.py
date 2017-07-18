@@ -17,10 +17,10 @@ class DMCircularGauge(QWidget):
         self._limits = [lim_low_channel, lim_hi_channel]
         self.channel_value = 49.0
 
-        width_ref = 400
-        height_ref = 220
-        self.resize(width_ref, height_ref)
-        self.aspect_ratio = width_ref / height_ref
+        self.width_ref = 400.0
+        self.height_ref = 220.0
+        self.resize(self.width_ref, self.height_ref)
+        self.ref_aspect_ratio = self.width_ref / self.height_ref
 
         self.dial_v_offset = self.height() * 0.1
         if self.height() >= self.width() / 2 + self.dial_v_offset:
@@ -56,18 +56,25 @@ class DMCircularGauge(QWidget):
         self.pin_bg.setColorAt(0, Qt.lightGray)
         self.pin_bg.setColorAt(1, Qt.black)
 
+        self.shadow_rect = QRectF(-self.dial_width / 2, -self.dial_height / 2, self.dial_width, self.dial_height * 1.1)
+        self.gloss_rect = QRectF(-self.dial_width / 5, -self.dial_height / 2, self.dial_width / 2.5, self.dial_height / 2)
+        self.gloss_gradient = QLinearGradient(QPointF(0.0, -self.dial_height / 2), QPointF(0.0, 0.0))
+        self.gloss_gradient.setColorAt(0.0, QColor(255, 255, 255, 120))
+        self.gloss_gradient.setColorAt(0.95, QColor(255, 255, 255, 0))
+
     def paintEvent(self, event):
         # Initialize QPainter properties
         painter = QPainter()
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        if self.height() <= self.width() / self.aspect_ratio:
+        if self.height() <= self.width() / self.ref_aspect_ratio:
             v_scale = self.height()
-            h_scale = v_scale * self.aspect_ratio
+            h_scale = v_scale * self.ref_aspect_ratio
         else:
             h_scale = self.width()
-            v_scale = h_scale / self.aspect_ratio
-        painter.scale(h_scale / 400.0, v_scale / 220.0)  # Scale all objects proportionate to window size
+            v_scale = h_scale / self.ref_aspect_ratio
+        # Scale all objects proportionate to window size
+        painter.scale(h_scale / self.width_ref, v_scale / self.height_ref)
         painter.save()
 
         # First main draw gauge background
@@ -121,7 +128,7 @@ class DMCircularGauge(QWidget):
         painter.rotate(-90)
         for i in range(0, 7):
             label = QString().setNum(labels[i], 'f', 2)
-            painter.drawText(QPointF(0.0 - font_metric.width(label) / 2.0, -self.dial_height * 0.80), label)
+            painter.drawText(QPointF(0.0 - font_metric.width(label) / 2.0, -self.dial_height * 0.75), label)
             painter.rotate(30)
         painter.restore()
 
@@ -167,19 +174,9 @@ class DMCircularGauge(QWidget):
         painter.translate(self.dial_width / 2.0, self.dial_height / 2.0)
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(0, 0, 0, 20))
-        painter.drawEllipse(-self.dial_width / 2,
-                            -self.dial_height / 2,
-                            self.dial_width,
-                            self.dial_height * 1.1)
-        gloss = QLinearGradient(QPointF(0.0, -self.dial_height / 2), QPointF(0.0, 0.0))
-        gloss.setColorAt(0.0, QColor(255, 255, 255, 120))
-        gloss.setColorAt(0.95, QColor(255, 255, 255, 0))
-        painter.setBrush(gloss)
-        painter.drawEllipse(-self.dial_width / 5,
-                            -self.dial_height / 2,
-                            self.dial_width / 2.5,
-                            self.dial_height / 2)
-
+        painter.drawEllipse(self.shadow_rect)
+        painter.setBrush(self.gloss_gradient)
+        painter.drawEllipse(self.gloss_rect)
         painter.restore()
 
         painter.end()
