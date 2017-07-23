@@ -37,7 +37,7 @@ class DMCircularGauge(QWidget):
         self.dial_height = self.width() / 2.0
         self.dial_width = self.width()
 
-        self.dial = QPainterPath(QPointF(0.0, self.dial_width))
+        self.dial = QPainterPath(QPointF(0.0, self.dial_height))
         self.dial.arcTo(0.0, 1.0, self.dial_width, self.dial_height * 2, 180, -180)
         self.dial.lineTo(self.dial_width, self.height_ref)
         self.dial.lineTo(0.0, self.height_ref)
@@ -245,7 +245,6 @@ class DMCircularGauge(QWidget):
 
     def update_value(self, value=0.0):
         self.channel_value = value
-        # print 'Value updated!'
         self.update()
 
     @property
