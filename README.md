@@ -1,5 +1,5 @@
 # DMCircularGauge
----
+
 ## Synopsis
 This code generates a QWidget subclass in the form of a circular gauge (think speedometer).  Widget is fully scalable
  and accepts inputs for a EPICS "PV" (process variable) from which to retrieve a set of parameters as well as independent max
@@ -26,3 +26,14 @@ This code generates a QWidget subclass in the form of a circular gauge (think sp
  7. lolo - Low Low alarm limit (.LOLO)
     * Presents as red bar on low (left) side of gauge
     * Displayed PV value (.VAL) text turns red when less than this limit
+
+## Dependencies
+Built with Python 2.7 and requires the following packages:
+
+* PyQt4 or greater
+* PyEPICS
+* PyDM
+* numpy
+
+Additionally requires EPICS Channel Access network IOC to act as data server.
+
