@@ -35,5 +35,5 @@ Built with Python 2.7 and requires the following packages:
 * PyDM
 * numpy
 
-Additionally requires EPICS Channel Access network IOC to act as data server.
+Additionally requires EPICS Channel Access network IOC or PyDMSim to act as data server.
 
