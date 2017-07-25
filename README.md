@@ -2,8 +2,8 @@
 
 ## Synopsis
 This code generates a QWidget subclass in the form of a circular gauge (think speedometer).  Widget is fully scalable
- and accepts inputs for a EPICS "PV" (process variable) from which to retrieve a set of parameters as well as independent max
- and min range variables.  Intended for use as part of the PyDM package with PyEPICS.  
+ and accepts inputs for a EPICS "PV" (process variable) from which to retrieve a set of parameters as well as 
+ independent max and min range variables.  Intended for use as part of the PyDM package with PyEPICS.  
  
  Values retrieved and used from PV are as follows:  
  

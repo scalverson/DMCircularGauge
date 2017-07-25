@@ -1,5 +1,5 @@
 from PyQt4.QtGui import (
-    QWidget, QPainter, QPainterPath, QPen, QRadialGradient, QLinearGradient,
+    QWidget, QPainter, QPainterPath, QPainterPathStroker, QPen, QBrush, QRadialGradient, QLinearGradient,
     QFont, QFontMetrics, QColor, QPolygonF
 )
 from PyQt4.QtCore import Qt, QString, QPointF, QPoint, QRectF, SIGNAL
@@ -7,6 +7,7 @@ from numpy import linspace
 
 
 class DMCircularGauge(QWidget):
+    sci_notation = False
     _value = 0.0
     percentage = 0.0
 
@@ -24,6 +25,10 @@ class DMCircularGauge(QWidget):
             range_low = self.channel.range()[0]
         if range_high is None:
             range_high = self.channel.range()[1]
+        if range_low > range_high:
+            temp = range_low
+            range_low = range_high
+            range_high = temp
         self.range = [range_low, range_high]
         self.connect(self.channel, SIGNAL('new_value(float)'), self.update_value)
         self.connect(self.channel, SIGNAL('new_limits(float, float, float, float)'), self.update_limits)
@@ -62,14 +67,30 @@ class DMCircularGauge(QWidget):
         self.pin_bg.setColorAt(0, Qt.lightGray)
         self.pin_bg.setColorAt(1, Qt.black)
 
-        self.shadow_rect = QRectF(-self.dial_width / 2, -self.dial_height / 2, self.dial_width, self.dial_height * 1.1)
-        self.gloss_rect = QRectF(-self.dial_width / 5, -self.dial_height / 2, self.dial_width / 2.5, self.dial_height / 2)
+        self.shadow_rect = QRectF(-self.dial_width / 2, -self.dial_height / 2,
+                                  self.dial_width, self.dial_height * 1.1)
+        self.gloss_rect = QRectF(-self.dial_width / 5, -self.dial_height / 2,
+                                 self.dial_width / 2.5, self.dial_height / 2)
         self.gloss_gradient = QLinearGradient(QPointF(0.0, -self.dial_height / 2), QPointF(0.0, 0.0))
         self.gloss_gradient.setColorAt(0.0, QColor(255, 255, 255, 120))
         self.gloss_gradient.setColorAt(0.95, QColor(255, 255, 255, 0))
 
         limits = self.channel.limits()
         self.update_limits(limits[0], limits[1], limits[2], limits[3])
+
+        self.pv_label_font = QFont()
+        self.pv_label_font.setPixelSize(22)
+        self.pv_label_font.setWeight(QFont.Bold)
+        # font_metric = QFontMetrics(self.pv_label_font)
+        # pv_label = self.channel.egu  # self.channel.name + ' (' + self.channel.egu + ')'
+        # text_path = QPainterPath()
+        # text_path.addText(QPointF(0.0 - font_metric.width(pv_label) / 2.0,
+        #                           (self.dial_height / 2.0) + (font_metric.height() * 1.5)),
+        #                   self.pv_label_font,
+        #                   pv_label)
+        # stroke_path = QPainterPathStroker()
+        # stroke_path.setWidth(1)
+        # self.pv_label_path = QPainterPath(stroke_path.createStroke(text_path) + text_path).simplified()
 
     def paintEvent(self, event):
         # Initialize QPainter properties
@@ -84,9 +105,10 @@ class DMCircularGauge(QWidget):
             v_scale = h_scale / self.ref_aspect_ratio
         # Scale all objects proportionate to window size
         painter.scale(h_scale / self.width_ref, v_scale / self.height_ref)
+        painter.setClipPath(self.dial)  # Don't allow objects or text to extend outside of main dial shape
         painter.save()
 
-        # First main draw gauge background
+        # First draw main gauge background
         pen = QPen(painter.pen())
         pen.setWidth(1)
         pen.setColor(Qt.black)
@@ -94,6 +116,7 @@ class DMCircularGauge(QWidget):
         painter.setBrush(self.dial_bg)
         painter.drawPath(self.dial)
 
+        # Add Minor and Major Alarm limit bars
         pen.setWidth(16)
         pen.setCapStyle(Qt.FlatCap)
         pen.setJoinStyle(Qt.BevelJoin)
@@ -110,11 +133,10 @@ class DMCircularGauge(QWidget):
 
         painter.restore()
 
-        # Display actual value
+        # Display PV current value
         painter.save()
-        painter.setClipPath(self.dial)  # Don't allow label text to extend outside of main shape
         font = QFont()
-        font.setPixelSize(min(max(self.dial_width / 2, 20), 50))
+        font.setPixelSize(45)
         painter.setFont(font)
         sevr = self.channel.sevr.lower()
         if sevr == 'major':
@@ -129,19 +151,23 @@ class DMCircularGauge(QWidget):
         painter.setPen(pen)
         font_metric = QFontMetrics(font)
         painter.translate(self.dial_width / 2, self.dial_height / 2)
-        label = QString().setNum(self.channel_value, 'f', 2)
+        label = self.format_label(self.channel_value)
         painter.drawText(QPointF(0.0 - font_metric.width(label) / 2.0, font_metric.height() / 2.0),
                          label)
-        font = QFont()
-        font.setPixelSize(min(max(self.dial_width / 10, 10), 20))
-        painter.setFont(font)
-        pen.setColor(Qt.black)
+
+        # Display PV name
+        painter.setFont(self.pv_label_font)
+        pen.setColor(Qt.darkCyan)
+        pen.setWidth(1)
         painter.setPen(pen)
-        font_metric = QFontMetrics(font)
-        pv_label = self.channel.name + ' (' + self.channel.egu + ')'
+        # brush = QBrush(Qt.darkCyan)
+        # painter.setBrush(brush)
+        font_metric = QFontMetrics(self.pv_label_font)
+        pv_label = self.channel.egu  # self.channel.name + ' (' + self.channel.egu + ')'
         painter.drawText(QPointF(0.0 - font_metric.width(pv_label) / 2.0,
-                                 (self.dial_height / 2.0) + (font_metric.height() * 1.5)),
+                               (self.dial_height / 2.0) + (font_metric.height() * 1.5)),
                          pv_label)
+        # painter.drawPath(self.pv_label_path)
         painter.restore()
 
         # Next add division markers
@@ -160,18 +186,17 @@ class DMCircularGauge(QWidget):
 
         # Layout division text labels
         painter.save()
-        painter.setClipPath(self.dial)  # Don't allow label text to extend outside of main shape
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         pen.setColor(Qt.cyan)
         painter.setPen(pen)
         font = QFont()
-        font.setPixelSize(min(max(self.dial_width / 10, 10), 20))
+        font.setPixelSize(18)
         painter.setFont(font)
         font_metric = QFontMetrics(font)
         labels = linspace(self.lim_low, self.lim_hi, 7)
         painter.rotate(-90)
         for i in range(0, 7):
-            label = QString().setNum(labels[i], 'f', 2)
+            label = self.format_label(labels[i])
             painter.drawText(QPointF(0.0 - font_metric.width(label) / 2.0, -self.dial_height * 0.75), label)
             painter.rotate(30)
         painter.restore()
@@ -216,7 +241,6 @@ class DMCircularGauge(QWidget):
 
         # Draw glass reflection and shadow effects
         painter.save()
-        painter.setClipPath(self.dial)
         painter.translate(self.dial_width / 2.0, self.dial_height / 2.0)
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor(0, 0, 0, 20))
@@ -226,6 +250,13 @@ class DMCircularGauge(QWidget):
         painter.restore()
 
         painter.end()
+
+    def format_label(self, label):
+        # Automatically switch to scientific notation for very large or very small numbers
+        if self.sci_notation or abs(label) >= 10000 or abs(label) < 0.01:
+            return QString().setNum(label, 'g', 2)
+        else:
+            return QString().setNum(label, 'f', 2)
 
     @property
     def lim_hi(self):
