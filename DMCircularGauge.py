@@ -54,12 +54,17 @@ class DMCircularGauge(QWidget):
         # self.dial_bg.setColorAt(1, Qt.black)
 
         needle_base_width = 18
-        self.needle_left = QPolygonF([QPoint(0, 0),
-                                      QPoint(0, -needle_base_width/2.0),
-                                      QPoint(self.dial_height*0.9, 0.0)])
-        self.needle_right = QPolygonF([QPoint(0, 0),
-                                      QPoint(0, needle_base_width / 2.0),
-                                      QPoint(self.dial_height * 0.9, 0.0)])
+        self.needle = QPolygonF([QPoint(0, -needle_base_width/2.0),
+                                 QPoint(self.dial_height * 0.9, 0.0),
+                                 QPoint(0, needle_base_width / 2.0)])
+        self.needle_color = Qt.gray
+
+        # self.needle_left = QPolygonF([QPoint(0, 0),
+        #                               QPoint(0, -needle_base_width/2.0),
+        #                               QPoint(self.dial_height*0.9, 0.0)])
+        # self.needle_right = QPolygonF([QPoint(0, 0),
+        #                               QPoint(0, needle_base_width / 2.0),
+        #                               QPoint(self.dial_height * 0.9, 0.0)])
 
         pin_diameter = 22
         self.pin_rect = QRectF(-pin_diameter / 2.0, -pin_diameter / 2.0, pin_diameter, pin_diameter)
@@ -207,6 +212,13 @@ class DMCircularGauge(QWidget):
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         painter.rotate(-180 * (1.0 - self.percentage))
 
+        pen.setColor(QColor(self.needle_color).darker(200))
+        pen.setWidth(1)
+        painter.setPen(pen)
+        painter.setBrush(self.needle_color)
+        painter.drawPolygon(self.needle)
+        painter.restore()
+
         # if self.percentage <= 0.5:
         #     shadow = max(490 * self.percentage, 127)
         #     needle_left_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
@@ -215,20 +227,20 @@ class DMCircularGauge(QWidget):
         #     shadow = max(125 / self.percentage, 127)
         #     needle_left_color = Qt.cyan  # QColor(230,230,230,255)
         #     needle_right_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
-
-        # Draw Highlight side of needle
-        pen.setWidth(1)
-        pen.setColor(Qt.gray)  # needle_left_color)
-        painter.setPen(pen)
-        painter.setBrush(Qt.gray)  # needle_left_color)
-        painter.drawPolygon(self.needle_left)
-
-        # Draw shadow side of needle
-        pen.setColor(Qt.gray)  # needle_right_color)
-        painter.setPen(pen)
-        painter.setBrush(Qt.gray)  # needle_right_color)
-        painter.drawPolygon(self.needle_right)
-        painter.restore()
+        #
+        # # Draw Highlight side of needle
+        # pen.setWidth(1)
+        # pen.setColor(Qt.gray)  # needle_left_color)
+        # painter.setPen(pen)
+        # painter.setBrush(Qt.gray)  # needle_left_color)
+        # painter.drawPolygon(self.needle_left)
+        #
+        # # Draw shadow side of needle
+        # pen.setColor(Qt.gray)  # needle_right_color)
+        # painter.setPen(pen)
+        # painter.setBrush(Qt.gray)  # needle_right_color)
+        # painter.drawPolygon(self.needle_right)
+        # painter.restore()
 
         # Draw needle axel pin
         painter.save()
