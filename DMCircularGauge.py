@@ -1,6 +1,6 @@
 from PyQt4.QtGui import (
-    QWidget, QPainter, QPainterPath, QPainterPathStroker, QPen, QBrush, QRadialGradient, QLinearGradient,
-    QFont, QFontMetrics, QColor, QPolygonF
+    QWidget, QPainter, QPainterPath,  QPen, QFont, QFontMetrics, QColor, QPolygonF
+    # QPainterPathStroker,QBrush, QRadialGradient, QLinearGradient,
 )
 from PyQt4.QtCore import Qt, QString, QPointF, QPoint, QRectF, SIGNAL
 from numpy import linspace
@@ -48,12 +48,12 @@ class DMCircularGauge(QWidget):
         self.dial.lineTo(0.0, self.height_ref)
         self.dial.lineTo(0.0, self.dial_height)
 
-        self.dial_bg = QRadialGradient(QPointF(self.width()/2.0, self.height()-self.dial_v_offset), self.dial_height)
-        self.dial_bg.setColorAt(0, Qt.lightGray)
-        self.dial_bg.setColorAt(0.98, QColor(50, 50, 50, 255))
-        self.dial_bg.setColorAt(1, Qt.black)
+        # self.dial_bg = QRadialGradient(QPointF(self.width()/2.0, self.height()-self.dial_v_offset), self.dial_height)
+        # self.dial_bg.setColorAt(0, Qt.lightGray)
+        # self.dial_bg.setColorAt(0.98, QColor(50, 50, 50, 255))
+        # self.dial_bg.setColorAt(1, Qt.black)
 
-        needle_base_width = 24
+        needle_base_width = 18
         self.needle_left = QPolygonF([QPoint(0, 0),
                                       QPoint(0, -needle_base_width/2.0),
                                       QPoint(self.dial_height*0.9, 0.0)])
@@ -61,19 +61,19 @@ class DMCircularGauge(QWidget):
                                       QPoint(0, needle_base_width / 2.0),
                                       QPoint(self.dial_height * 0.9, 0.0)])
 
-        pin_diameter = 28
+        pin_diameter = 22
         self.pin_rect = QRectF(-pin_diameter / 2.0, -pin_diameter / 2.0, pin_diameter, pin_diameter)
-        self.pin_bg = QRadialGradient(QPointF(0.0, -pin_diameter / 5.0), pin_diameter * 0.75)
-        self.pin_bg.setColorAt(0, Qt.lightGray)
-        self.pin_bg.setColorAt(1, Qt.black)
+        # self.pin_bg = QRadialGradient(QPointF(0.0, -pin_diameter / 5.0), pin_diameter * 0.75)
+        # self.pin_bg.setColorAt(0, Qt.lightGray)
+        # self.pin_bg.setColorAt(1, Qt.black)
 
-        self.shadow_rect = QRectF(-self.dial_width / 2, -self.dial_height / 2,
-                                  self.dial_width, self.dial_height * 1.1)
-        self.gloss_rect = QRectF(-self.dial_width / 5, -self.dial_height / 2,
-                                 self.dial_width / 2.5, self.dial_height / 2)
-        self.gloss_gradient = QLinearGradient(QPointF(0.0, -self.dial_height / 2), QPointF(0.0, 0.0))
-        self.gloss_gradient.setColorAt(0.0, QColor(255, 255, 255, 120))
-        self.gloss_gradient.setColorAt(0.95, QColor(255, 255, 255, 0))
+        # self.shadow_rect = QRectF(-self.dial_width / 2, -self.dial_height / 2,
+        #                           self.dial_width, self.dial_height * 1.1)
+        # self.gloss_rect = QRectF(-self.dial_width / 5, -self.dial_height / 2,
+        #                          self.dial_width / 2.5, self.dial_height / 2)
+        # self.gloss_gradient = QLinearGradient(QPointF(0.0, -self.dial_height / 2), QPointF(0.0, 0.0))
+        # self.gloss_gradient.setColorAt(0.0, QColor(255, 255, 255, 120))
+        # self.gloss_gradient.setColorAt(0.95, QColor(255, 255, 255, 0))
 
         limits = self.channel.limits()
         self.update_limits(limits[0], limits[1], limits[2], limits[3])
@@ -113,7 +113,7 @@ class DMCircularGauge(QWidget):
         pen.setWidth(1)
         pen.setColor(Qt.black)
         painter.setPen(pen)
-        painter.setBrush(self.dial_bg)
+        painter.setBrush(QColor(100, 100, 100, 255))  # self.dial_bg)
         painter.drawPath(self.dial)
 
         # Add Minor and Major Alarm limit bars
@@ -123,6 +123,7 @@ class DMCircularGauge(QWidget):
 
         pen.setColor(Qt.yellow)
         painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)
         painter.drawPath(self.low_arc)
         painter.drawPath(self.high_arc)
 
@@ -157,7 +158,7 @@ class DMCircularGauge(QWidget):
 
         # Display PV name
         painter.setFont(self.pv_label_font)
-        pen.setColor(Qt.darkCyan)
+        pen.setColor(Qt.black)  # Qt.darkCyan)
         pen.setWidth(1)
         painter.setPen(pen)
         # brush = QBrush(Qt.darkCyan)
@@ -165,7 +166,7 @@ class DMCircularGauge(QWidget):
         font_metric = QFontMetrics(self.pv_label_font)
         pv_label = self.channel.egu  # self.channel.name + ' (' + self.channel.egu + ')'
         painter.drawText(QPointF(0.0 - font_metric.width(pv_label) / 2.0,
-                               (self.dial_height / 2.0) + (font_metric.height() * 1.5)),
+                                 (self.dial_height / 2.0) + (font_metric.height() * 1.5)),
                          pv_label)
         # painter.drawPath(self.pv_label_path)
         painter.restore()
@@ -173,7 +174,7 @@ class DMCircularGauge(QWidget):
         # Next add division markers
         painter.save()
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
-        pen.setColor(Qt.cyan)
+        pen.setColor(Qt.black)  # Qt.cyan)
         pen.setWidth(2)
         painter.setPen(pen)
         for i in range(0, 31):
@@ -187,7 +188,7 @@ class DMCircularGauge(QWidget):
         # Layout division text labels
         painter.save()
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
-        pen.setColor(Qt.cyan)
+        pen.setColor(Qt.black)  # Qt.cyan)
         painter.setPen(pen)
         font = QFont()
         font.setPixelSize(18)
@@ -206,26 +207,26 @@ class DMCircularGauge(QWidget):
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         painter.rotate(-180 * (1.0 - self.percentage))
 
-        if self.percentage <= 0.5:
-            shadow = max(490 * self.percentage, 127)
-            needle_left_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
-            needle_right_color = Qt.cyan  # QColor(230,230,230,255)
-        else:
-            shadow = max(125 / self.percentage, 127)
-            needle_left_color = Qt.cyan  # QColor(230,230,230,255)
-            needle_right_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
+        # if self.percentage <= 0.5:
+        #     shadow = max(490 * self.percentage, 127)
+        #     needle_left_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
+        #     needle_right_color = Qt.cyan  # QColor(230,230,230,255)
+        # else:
+        #     shadow = max(125 / self.percentage, 127)
+        #     needle_left_color = Qt.cyan  # QColor(230,230,230,255)
+        #     needle_right_color = QColor(0, shadow, shadow)  # Qt.darkCyan  # QColor(80,80,80,255)
 
         # Draw Highlight side of needle
         pen.setWidth(1)
-        pen.setColor(needle_left_color)
+        pen.setColor(Qt.gray)  # needle_left_color)
         painter.setPen(pen)
-        painter.setBrush(needle_left_color)
+        painter.setBrush(Qt.gray)  # needle_left_color)
         painter.drawPolygon(self.needle_left)
 
         # Draw shadow side of needle
-        pen.setColor(needle_right_color)
+        pen.setColor(Qt.gray)  # needle_right_color)
         painter.setPen(pen)
-        painter.setBrush(needle_right_color)
+        painter.setBrush(Qt.gray)  # needle_right_color)
         painter.drawPolygon(self.needle_right)
         painter.restore()
 
@@ -234,20 +235,20 @@ class DMCircularGauge(QWidget):
         pen.setWidth(1)
         pen.setColor(Qt.black)
         painter.setPen(pen)
-        painter.setBrush(self.pin_bg)
+        painter.setBrush(QColor(50, 50, 50, 255))  # self.pin_bg)
         painter.translate(self.dial_width / 2, self.dial_height * 0.98)
         painter.drawEllipse(self.pin_rect)
         painter.restore()
 
         # Draw glass reflection and shadow effects
-        painter.save()
-        painter.translate(self.dial_width / 2.0, self.dial_height / 2.0)
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(0, 0, 0, 20))
-        painter.drawEllipse(self.shadow_rect)
-        painter.setBrush(self.gloss_gradient)
-        painter.drawEllipse(self.gloss_rect)
-        painter.restore()
+        # painter.save()
+        # painter.translate(self.dial_width / 2.0, self.dial_height / 2.0)
+        # painter.setPen(Qt.NoPen)
+        # painter.setBrush(QColor(0, 0, 0, 20))
+        # painter.drawEllipse(self.shadow_rect)
+        # painter.setBrush(self.gloss_gradient)
+        # painter.drawEllipse(self.gloss_rect)
+        # painter.restore()
 
         painter.end()
 
